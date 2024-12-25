@@ -35,6 +35,9 @@ type model struct {
 	board      BoolBoard
 	boardcount NumBoard
 	debugmode  bool
+
+	curx       int
+	cury       int
 }
 
 func IncNeighbors(a NumBoard, x int, y int) NumBoard {
@@ -84,16 +87,19 @@ func InitialModel(pty ssh.Pty, renderer *lipgloss.Renderer, bg string, styles ma
 		bc[i] = bcr
 	}
 	m := model{
-		term:      pty.Term,
-		profile:   renderer.ColorProfile().Name(),
-		width:     pty.Window.Width,
-		height:    pty.Window.Height,
-		bg:        bg,
-		styles:    styles,
+		term:       pty.Term,
+		profile:    renderer.ColorProfile().Name(),
+		width:      pty.Window.Width,
+		height:     pty.Window.Height,
+		bg:         bg,
+		styles:     styles,
 
-		board:     b,
+		board:      b,
 		boardcount: bc,
 		debugmode:  false,
+
+		curx:       0,
+		cury:       0,
 	}
 	return m
 }
@@ -109,7 +115,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "i":
+		case " ":
 			for y, row := range m.board {
 				for x := range row {
 					m.boardcount[y][x] = 0
@@ -133,7 +139,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			return m, nil
-		case "s":
+		case "p":
 			m.board[4][4] = true
 			m.board[5][5] = true
 			m.board[5][6] = true
@@ -142,6 +148,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "m":
 			m.debugmode = !m.debugmode
+		case "w":
+			if m.cury > 0 {
+				m.cury -= 1
+			}
+		case "s":
+			if m.cury < len(m.board)-1 {
+				m.cury += 1
+			}
+		case "a":
+			if m.curx > 0 {
+				m.curx -= 1
+			}
+		case "d":
+			if m.curx < len(m.board[0])-1 {
+				m.curx += 1
+			}
+		case "e":
+			m.board[m.cury][m.curx] = !m.board[m.cury][m.curx]
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		}
@@ -152,21 +176,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	s := ""
 	if m.debugmode {
-		for _, row := range m.boardcount {
-			for _, cell := range row {
-				s += fmt.Sprintf("%2d", cell)
+		for y, row := range m.boardcount {
+			for x, cell := range row {
+				if y == m.cury && x == m.curx {
+					s += m.styles["cur"].Render(fmt.Sprintf("%2d", cell))
+				} else {
+					s += m.styles["txt"].Render(fmt.Sprintf("%2d", cell))
+				}
 			}
 			s += "\n"
 		}
 		return m.styles["txt"].Render(s) + "\n\n" + m.styles["quit"].Render("Press 'q' to quit\n")
 	}
 
-	for _, row := range m.board {
-		for _, cell := range row {
+	for y, row := range m.board {
+		for x, cell := range row {
 			if cell {
-				s += "00"
+				if y == m.cury && x == m.curx {
+					s += m.styles["cur"].Render("00")
+				} else {
+					s += m.styles["txt"].Render("00")
+				}
 			} else {
-				s += ".."
+				if y == m.cury && x == m.curx {
+					s += m.styles["cur"].Render("..")
+				} else {
+					s += m.styles["txt"].Render("..")
+				}
 			}
 		}
 		s += "\n"
