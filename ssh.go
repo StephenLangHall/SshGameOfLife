@@ -29,7 +29,7 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	// your Bubble Tea model.
 	renderer := bubbletea.MakeRenderer(s)
 	txtStyle := renderer.NewStyle().Foreground(lipgloss.Color("10"))
-	curStyle := renderer.NewStyle().Foreground(lipgloss.Color("37"))
+	curStyle := renderer.NewStyle().Foreground(lipgloss.Color("10")).Reverse(true)
 	quitStyle := renderer.NewStyle().Foreground(lipgloss.Color("8"))
 
 	bg := "light"

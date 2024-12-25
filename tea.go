@@ -46,25 +46,61 @@ func IncNeighbors(a NumBoard, x int, y int) NumBoard {
 		b[y-1][x] += 1
 		if x > 0 {
 			b[y-1][x-1] += 1
+		} else {
+			b[y-1][len(a[0])-1] += 1
 		}
 		if x < len(a[0])-1 {
 			b[y-1][x+1] += 1
+		} else {
+			b[y-1][0] += 1
+		}
+	} else {
+		b[len(a)-1][x] += 1
+		if x > 0 {
+			b[len(a)-1][x-1] += 1
+		} else {
+			b[len(a)-1][len(a[0])-1] += 1
+		}
+		if x < len(a[0])-1 {
+			b[len(a)-1][x+1] += 1
+		} else {
+			b[len(a)-1][0] += 1
 		}
 	}
 	if y < len(a)-1 {
 		b[y+1][x] += 1
 		if x > 0 {
 			b[y+1][x-1] += 1
+		} else {
+			b[y+1][len(a[0])-1] += 1
 		}
 		if x < len(a[0])-1 {
 			b[y+1][x+1] += 1
+		} else {
+			b[y+1][0] += 1
+		}
+	} else {
+		b[0][x] += 1
+		if x > 0 {
+			b[0][x-1] += 1
+		} else {
+			b[0][len(a[0])-1] += 1
+		}
+		if x < len(a[0])-1 {
+			b[0][x+1] += 1
+		} else {
+			b[0][0] += 1
 		}
 	}
 	if x > 0 {
 		b[y][x-1] += 1
+	} else {
+		b[y][len(a[0])-1] += 1
 	}
 	if x < len(a[0])-1 {
 		b[y][x+1] += 1
+	} else {
+		b[y][0] += 1
 	}
 	return b
 }
@@ -193,15 +229,15 @@ func (m model) View() string {
 		for x, cell := range row {
 			if cell {
 				if y == m.cury && x == m.curx {
-					s += m.styles["cur"].Render("00")
+					s += m.styles["cur"].Render("OO")
 				} else {
-					s += m.styles["txt"].Render("00")
+					s += m.styles["txt"].Render("OO")
 				}
 			} else {
 				if y == m.cury && x == m.curx {
-					s += m.styles["cur"].Render("..")
+					s += m.styles["cur"].Render("  ")
 				} else {
-					s += m.styles["txt"].Render("..")
+					s += m.styles["txt"].Render("  ")
 				}
 			}
 		}
