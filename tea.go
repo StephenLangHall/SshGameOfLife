@@ -229,13 +229,13 @@ func (m model) View() string {
 		for x, cell := range row {
 			if cell {
 				if y == m.cury && x == m.curx {
-					s += m.styles["cur"].Render("OO")
+					s += m.styles["cur"].Render("<>")
 				} else {
-					s += m.styles["txt"].Render("OO")
+					s += m.styles["cur"].Render("  ")
 				}
 			} else {
 				if y == m.cury && x == m.curx {
-					s += m.styles["cur"].Render("  ")
+					s += m.styles["txt"].Render("<>")
 				} else {
 					s += m.styles["txt"].Render("  ")
 				}
@@ -243,5 +243,5 @@ func (m model) View() string {
 		}
 		s += "\n"
 	}
-	return m.styles["txt"].Render(s) + "\n\n" + m.styles["quit"].Render("Press 'q' to quit\n")
+	return m.styles["txt"].Border(lipgloss.NormalBorder(), true, true, true, true).Render(s) + "\n\n" + m.styles["quit"].Render("Press 'q' to quit\n")
 }
