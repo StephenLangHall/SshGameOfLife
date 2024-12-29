@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,6 +17,7 @@ const (
 	port = "6"
 	w = 64
 	h = 64
+	MilisecondFrameWait = 100
 )
 
 type BoolBoardRow [w]bool
@@ -35,6 +37,7 @@ type model struct {
 	board      BoolBoard
 	boardcount NumBoard
 	debugmode  bool
+	pause      bool
 
 	curx       int
 	cury       int
@@ -133,6 +136,7 @@ func InitialModel(pty ssh.Pty, renderer *lipgloss.Renderer, bg string, styles ma
 		board:      b,
 		boardcount: bc,
 		debugmode:  false,
+		pause:      true,
 
 		curx:       0,
 		cury:       0,
@@ -140,8 +144,42 @@ func InitialModel(pty ssh.Pty, renderer *lipgloss.Renderer, bg string, styles ma
 	return m
 }
 
+type TickMsg time.Time
+
+func doTick() tea.Cmd {
+	return tea.Tick(MilisecondFrameWait * time.Millisecond, func(t time.Time) tea.Msg {
+		return TickMsg(t)
+	})
+}
+
 func (m model) Init() tea.Cmd {
-	return tea.EnterAltScreen
+	return doTick()
+}
+
+func (m model) UpdateBoard() (tea.Model, tea.Cmd) {
+	for y, row := range m.board {
+		for x := range row {
+			m.boardcount[y][x] = 0
+		}
+	}
+	for y, row := range m.board {
+		for x, cell := range row {
+			if cell {
+				m.boardcount = IncNeighbors(m.boardcount, x, y)
+			}
+		}
+	}
+	for y, row := range m.boardcount {
+		for x, cell := range row {
+			if cell == 3 {
+				m.board[y][x] = true
+			}
+			if cell < 2 || cell > 3 {
+				m.board[y][x] = false
+			}
+		}
+	}
+	return m, nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -152,6 +190,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case " ":
+			m.pause = !m.pause
+		case "m":
+			m.debugmode = !m.debugmode
+		case "w":
+			if m.cury > 0 {
+				m.cury -= 1
+			}
+		case "s":
+			if m.cury < len(m.board)-1 {
+				m.cury += 1
+			}
+		case "a":
+			if m.curx > 0 {
+				m.curx -= 1
+			}
+		case "d":
+			if m.curx < len(m.board[0])-1 {
+				m.curx += 1
+			}
+		case "e":
+			if m.pause {
+				m.board[m.cury][m.curx] = !m.board[m.cury][m.curx]
+			}
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		}
+	case TickMsg:
+		if !m.pause {
 			for y, row := range m.board {
 				for x := range row {
 					m.boardcount[y][x] = 0
@@ -174,37 +240,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-			return m, nil
-		case "p":
-			m.board[4][4] = true
-			m.board[5][5] = true
-			m.board[5][6] = true
-			m.board[6][5] = true
-			m.board[6][4] = true
-			return m, nil
-		case "m":
-			m.debugmode = !m.debugmode
-		case "w":
-			if m.cury > 0 {
-				m.cury -= 1
-			}
-		case "s":
-			if m.cury < len(m.board)-1 {
-				m.cury += 1
-			}
-		case "a":
-			if m.curx > 0 {
-				m.curx -= 1
-			}
-		case "d":
-			if m.curx < len(m.board[0])-1 {
-				m.curx += 1
-			}
-		case "e":
-			m.board[m.cury][m.curx] = !m.board[m.cury][m.curx]
-		case "q", "ctrl+c":
-			return m, tea.Quit
 		}
+		return m, doTick()
 	}
 	return m, nil
 }
