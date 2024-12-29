@@ -20,11 +20,6 @@ const (
 	MilisecondFrameWait = 100
 )
 
-type BoolBoardRow [w]bool
-type NumBoardRow  [w]int
-type BoolBoard [h]BoolBoardRow
-type NumBoard  [h]NumBoardRow
-
 // Just a generic tea.Model to demo terminal information of ssh.
 type model struct {
 	term       string
@@ -34,8 +29,8 @@ type model struct {
 	bg         string
 	styles     map[string]lipgloss.Style
 
-	board      BoolBoard
-	boardcount NumBoard
+	board      [h][w]bool
+	boardcount [h][w]int
 	debugmode  bool
 	pause      bool
 
@@ -43,7 +38,7 @@ type model struct {
 	cury       int
 }
 
-func IncNeighbors(a NumBoard, x int, y int) NumBoard {
+func IncNeighbors(a [h][w]int, x int, y int) [h][w]int {
 	b := a
 	if y > 0 {
 		b[y-1][x] += 1
@@ -109,16 +104,16 @@ func IncNeighbors(a NumBoard, x int, y int) NumBoard {
 }
 
 func InitialModel(pty ssh.Pty, renderer *lipgloss.Renderer, bg string, styles map[string]lipgloss.Style) model {
-	b := BoolBoard{}
-	br := BoolBoardRow{}
+	b := [h][w]bool{}
+	br := [w]bool{}
 	for i := range br {
 		br[i] = false
 	}
 	for i := range b {
 		b[i] = br
 	}
-	bc := NumBoard{}
-	bcr := NumBoardRow{}
+	bc := [h][w]int{}
+	bcr := [w]int{}
 	for i := range bcr {
 		bcr[i] = 0
 	}
@@ -218,11 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case TickMsg:
 		if !m.pause {
-			for y, row := range m.board {
-				for x := range row {
-					m.boardcount[y][x] = 0
-				}
-			}
+			m.boardcount = [len(m.boardcount)][len(m.boardcount[0])]int{}
 			for y, row := range m.board {
 				for x, cell := range row {
 					if cell {
@@ -280,5 +271,5 @@ func (m model) View() string {
 		}
 		s += "\n"
 	}
-	return m.styles["txt"].Border(lipgloss.NormalBorder(), true, true, true, true).Render(s) + "\n\n" + m.styles["quit"].Render("Press 'q' to quit\n")
+	return m.styles["txt"].Border(lipgloss.ThickBorder(), true, true, true, true).Render(s) + "\n\n" + m.styles["quit"].Render("Press 'q' to quit\n")
 }
