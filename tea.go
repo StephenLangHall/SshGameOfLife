@@ -105,21 +105,9 @@ func IncNeighbors(a [h][w]int, x int, y int) [h][w]int {
 
 func InitialModel(pty ssh.Pty, renderer *lipgloss.Renderer, bg string, styles map[string]lipgloss.Style) model {
 	b := [h][w]bool{}
-	br := [w]bool{}
-	for i := range br {
-		br[i] = false
-	}
-	for i := range b {
-		b[i] = br
-	}
+	b = [len(b)][len(b[0])]bool{}
 	bc := [h][w]int{}
-	bcr := [w]int{}
-	for i := range bcr {
-		bcr[i] = 0
-	}
-	for i := range bc {
-		bc[i] = bcr
-	}
+	bc = [len(bc)][len(bc[0])]int{}
 	m := model{
 		term:       pty.Term,
 		profile:    renderer.ColorProfile().Name(),
@@ -208,6 +196,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.pause {
 				m.board[m.cury][m.curx] = !m.board[m.cury][m.curx]
 			}
+		case "b":
+			SaveBoard(m.board)
+		case "c":
+			m.boardcount = [len(m.boardcount)][len(m.boardcount[0])]int{}
+			m.board = [len(m.boardcount)][len(m.boardcount[0])]bool{}
+		case "r":
+			m.board = OpenBoard()
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		}
